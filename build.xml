@@ -1,0 +1,83 @@
+<project name="Sample Build File for PMD and Apex Migration Tool" default="execute_pmd" basedir="." xmlns:sf="antlib:com.salesforce">
+
+	<description>
+		Simple example build file to run pmd rules using ant command
+	</description>
+	
+	<!-- Define Properties Files -->
+    <property file="build.properties"/>
+    <property environment="env"/>
+	<property name="src.dir"       value="../force-app/main/default"/>
+    <property name="lib.dir"       value="../lib"/>
+	<property name="rules.file"    value="../rules/rules_new.xml" />
+	<property name="report.file"   value="../reports/pmd_report.html" />
+	<property name="report.xml"    value="../reports/pmd_report.xml" />
+	<property name="pmd.cache"     value="../cache/pmd.cache" />
+	<property name="ant.jar"       value="ant-salesforce.jar" />
+	
+	<!-- define the class path where all jar files resids -->
+	<path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+	
+	<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="classpath"/>
+	
+	<!-- Define the Taskdef for Salesforce Ant migration tool -->
+    <taskdef resource="com/salesforce/antlib.xml" 
+             uri="antlib:com.salesforce" >
+        <classpath>
+            <pathelement location="${ant.jar}" />
+        </classpath>
+    </taskdef>
+	
+	<target name="execute_pmd" >
+		<pmd shortFilenames="true" cacheLocation="${pmd.cache}" noCache="false">
+			<sourceLanguage name="apex" version=""/>
+			<ruleset>${rules.file}</ruleset>
+			<!-- Define the format of the report you wanted to generate -->
+			<formatter type="summaryhtml" toFile="${report.file}" showSuppressed="true">
+				<param name="linkPrefix" value="http://pmd.sourceforge.net/xref/"/>
+			</formatter>
+			<fileset dir="${src.dir}"></fileset>
+		</pmd>
+	</target>
+	<target name="xml_pmd" depends="execute_pmd">
+		<pmd shortFilenames="true" cacheLocation="${pmd.cache}" noCache="false" >
+			<sourceLanguage name="apex" version=""/>
+			<ruleset>${rules.file}</ruleset>
+			<!-- Define the format of the report you wanted to generate -->
+			<formatter type="xml" toFile="${report.xml}" showSuppressed="true">
+				<param name="linkPrefix" value="http://pmd.sourceforge.net/xref/"/>
+			</formatter>
+			<fileset dir="${src.dir}"></fileset>
+		</pmd>
+	</target>
+	
+	<!-- Define a target for sending the Email with attachment to the specified email ids -->
+	<target name="send_report" depends="execute_pmd">
+		<mail mailhost="smtp.gmail.com" 
+			  ssl="false" 
+			  mailport="587" 
+			  enableStartTLS="true"
+			  subject="Static Code Analysis Report"
+			  user="${gmail.username}" 
+			  password="${gmail.password}"
+			  messagemimetype = "text/html"
+			  files="${report.file}" 
+			  tolist="anabiswas@deloitte.com,${gmail.username},ravikgupta@deloitte.com">
+		  <from address="${gmail.username}"/>
+		  <replyto address="${gmail.username}"/>
+		  <!-- <to address="${gmail.username}"/> -->
+		  <message>Dear, Please find the attached report of Apex Code Analysis</message>
+		</mail>
+	</target>
+	
+	<!-- define the target fir printing the information about the available targets -->
+	<target name="pmd_info">    
+        <echo message="Available Targets: "/>
+        <echo message="execute_pmd"/>
+		<echo message="xml_pmd" />
+		<echo message="send_report" />
+    </target>
+
+</project>
